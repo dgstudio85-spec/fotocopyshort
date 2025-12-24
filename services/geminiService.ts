@@ -3,23 +3,37 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 /**
  * Menganalisis frame video untuk mengekstrak adegan dan metadata media sosial yang viral.
+ * Dioptimalkan untuk Algoritma YouTube, TikTok, dan Instagram dengan format Hashtag siap pakai.
  */
 export const analyzeVideoToScenes = async (frames: { data: string, mimeType: string }[], numScenes: number = 4) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Analisis frame video ini untuk strategi konten viral. Tugas Anda:
-  1. Identifikasi karakter dan suasana utama.
-  2. Buat tepat ${numScenes} adegan (scenes) berdasarkan alur video.
-  3. Buat metadata sosial media yang dioptimalkan untuk jangkauan luas (high reach) pada 3 platform utama.
+  const prompt = `Anda adalah Spesialis Konten Viral & Pakar SEO Media Sosial.
+  Tugas Anda adalah menganalisis frame video ini dan membuat paket metadata yang PASTI FYP dan mendapatkan banyak viewers.
+
+  KETENTUAN OUTPUT METADATA (Bahasa Indonesia):
+  1. YouTube (Fokus pada Search & Suggested):
+     - Title: Gunakan teknik High-CTR (Curiosity Gap, High Stakes, atau Result-Oriented). Maks 70 karakter.
+     - Description: Pastikan 2 baris pertama mengandung kata kunci utama. Sertakan ringkasan konten yang menggugah rasa penasaran, manfaat bagi penonton, dan Call to Action.
+     - Tags: WAJIB dalam format HASHTAG (#kata1 #kata2 #kata3). Gunakan campuran kata kunci broad dan long-tail.
   
-  Ketentuan Bahasa (SANGAT PENTING):
-  - Judul, deskripsi, caption, dan tag: WAJIB dalam BAHASA INDONESIA yang menarik dan viral.
-  - "prompt" untuk adegan: WAJIB dalam BAHASA INGGRIS yang sangat detail, teknis, dan deskriptif untuk menghasilkan gambar berkualitas tinggi (sebutkan lighting, cinematic style, dan detail objek).
-  
-  Ketentuan Metadata:
-  - YouTube: Judul yang memancing klik (clickbait positif), deskripsi SEO yang kuat, dan tag pencarian populer.
-  - TikTok: Kalimat hook pembuka yang kuat, caption singkat & padat, dan hashtag trending.
-  - Instagram: Caption estetik yang mengundang interaksi, deskripsi singkat, dan hashtag populer.
-  
+  2. TikTok (Fokus pada Hook & Trend):
+     - Title/Hook: Kalimat 3 detik pertama yang menghentikan scrolling.
+     - Caption: Singkat, menggunakan bahasa slang/tren terkini, dan memancing komentar.
+     - Tags: WAJIB dalam format HASHTAG (#fyp #foryou #viral #trend #danLainnya).
+
+  3. Instagram (Fokus pada Aesthetic & Engagement):
+     - Title: Headline estetik.
+     - Caption: Bercerita (storytelling) dengan format yang bersih dan emoji yang tepat.
+     - Tags: WAJIB dalam format HASHTAG (#aesthetic #explore #videoViral #danLainnya).
+
+  KETENTUAN KHUSUS HASHTAG:
+  - Setiap kata kunci dalam bagian "tags" HARUS diawali dengan tanda '#'.
+  - Pisahkan antar hashtag dengan spasi tunggal agar pengguna bisa langsung menyalin dan menempelnya.
+  - Berikan minimal 10-15 hashtag yang relevan per platform.
+
+  KETENTUAN VISUAL PROMPT (Bahasa Inggris):
+  - "prompt" untuk adegan: Wajib dalam Bahasa Inggris. Deskripsikan secara teknis (lighting, camera angle, 8k resolution, cinematic style) berdasarkan analisis frame yang diberikan agar hasil render gambar sangat realistis.
+
   Kembalikan dalam format JSON murni:
   {
     "characterDescription": "...",
