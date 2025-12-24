@@ -1,52 +1,30 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Note: We create a new instance of GoogleGenAI within each function call 
-// to ensure the latest API key is always used, as per coding guidelines.
-
 /**
- * Generates a video based on a prompt using Veo 3.1.
- * This is an async process that requires polling.
- */
-export const generateVideo = async (prompt: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  let operation = await ai.models.generateVideos({
-    model: 'veo-3.1-fast-generate-preview',
-    prompt: prompt,
-    config: {
-      numberOfVideos: 1,
-      resolution: '720p',
-      aspectRatio: '16:9'
-    }
-  });
-
-  // Polling until video is ready
-  while (!operation.done) {
-    await new Promise(resolve => setTimeout(resolve, 10000)); // Poll every 10 seconds
-    operation = await ai.operations.getVideosOperation({ operation: operation });
-  }
-
-  const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-  if (!downloadLink) throw new Error("Video generation failed");
-  
-  // Append API key for fetching the actual mp4 bytes
-  return `${downloadLink}&key=${process.env.API_KEY}`;
-};
-
-/**
- * Analyzes video frames to extract scenes and character description using Gemini 3 Pro.
+ * Menganalisis frame video untuk mengekstrak adegan dan metadata media sosial yang viral.
  */
 export const analyzeVideoToScenes = async (frames: { data: string, mimeType: string }[], numScenes: number = 4) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Analisis frame video ini. Tugas Anda adalah:
-  1. Identifikasi karakter utama secara sangat mendetail.
-  2. Buat deskripsi karakter (characterDescription) yang konsisten.
-  3. Buat tepat ${numScenes} adegan awal (scenes) berdasarkan alur video.
-  Kembalikan dalam format JSON:
+  const prompt = `Analisis frame video ini untuk strategi konten viral. Tugas Anda:
+  1. Identifikasi karakter dan suasana utama.
+  2. Buat tepat ${numScenes} adegan (scenes) berdasarkan alur video.
+  3. Buat metadata sosial media yang dioptimalkan untuk jangkauan luas (high reach) pada 3 platform utama.
+  
+  Ketentuan Metadata:
+  - YouTube Shorts: Judul yang memancing rasa penasaran, deskripsi SEO yang kuat, dan tag pencarian.
+  - TikTok: Hook yang kuat di awal, caption singkat & padat, dan hashtag trending saat ini.
+  - Instagram Reels: Caption estetik yang mengundang interaksi, deskripsi singkat, dan hashtag populer.
+  
+  Kembalikan dalam format JSON murni:
   {
     "characterDescription": "...",
-    "scenes": [{"title": "...", "prompt": "..."}]
+    "scenes": [{"title": "...", "prompt": "..."}],
+    "socialMetadata": {
+      "youtube": { "title": "...", "description": "...", "tags": "..." },
+      "tiktok": { "title": "...", "description": "...", "tags": "..." },
+      "instagram": { "title": "...", "description": "...", "tags": "..." }
+    }
   }`;
 
   const response = await ai.models.generateContent({
@@ -68,9 +46,41 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
               },
               required: ["title", "prompt"]
             }
+          },
+          socialMetadata: {
+            type: Type.OBJECT,
+            properties: {
+              youtube: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  tags: { type: Type.STRING }
+                },
+                required: ["title", "description", "tags"]
+              },
+              tiktok: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  tags: { type: Type.STRING }
+                },
+                required: ["title", "description", "tags"]
+              },
+              instagram: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  tags: { type: Type.STRING }
+                },
+                required: ["title", "description", "tags"]
+              }
+            }
           }
         },
-        required: ["characterDescription", "scenes"]
+        required: ["characterDescription", "scenes", "socialMetadata"]
       }
     }
   });
@@ -78,19 +88,21 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
   try {
     return JSON.parse(response.text || "{}");
   } catch (e) {
-    return { characterDescription: "", scenes: [] };
+    console.error("JSON parse error", e);
+    return { characterDescription: "", scenes: [], socialMetadata: null };
   }
 };
 
-/**
- * Generates an image based on a prompt using Gemini 2.5 Flash Image.
- */
-export const generateImage = async (prompt: string) => {
+export const generateImage = async (prompt: string, aspectRatio: "16:9" | "9:16" | "1:1" = "16:9") => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: { parts: [{ text: prompt }] },
-    config: { imageConfig: { aspectRatio: "16:9" } }
+    config: { 
+      imageConfig: { 
+        aspectRatio: aspectRatio 
+      } 
+    }
   });
 
   for (const part of response.candidates?.[0]?.content?.parts || []) {
@@ -99,31 +111,20 @@ export const generateImage = async (prompt: string) => {
   throw new Error("No image generated");
 };
 
-/**
- * Simple text generation using Gemini 3 Pro.
- */
 export const generateText = async (message: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   return await ai.models.generateContent({ model: 'gemini-3-pro-preview', contents: message });
 };
 
-/**
- * Perform Search Grounding using Gemini 3 Flash.
- */
 export const searchGrounding = async (prompt: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   return await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: prompt,
-    config: {
-      tools: [{ googleSearch: {} }],
-    },
+    config: { tools: [{ googleSearch: {} }] },
   });
 };
 
-/**
- * Perform Maps Grounding using Gemini 2.5 series model.
- */
 export const mapsGrounding = async (prompt: string, latitude?: number, longitude?: number) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   return await ai.models.generateContent({
@@ -132,12 +133,7 @@ export const mapsGrounding = async (prompt: string, latitude?: number, longitude
     config: {
       tools: [{ googleMaps: {} }],
       toolConfig: (latitude !== undefined && longitude !== undefined) ? {
-        retrievalConfig: {
-          latLng: {
-            latitude,
-            longitude,
-          }
-        }
+        retrievalConfig: { latLng: { latitude, longitude } }
       } : undefined
     },
   });
