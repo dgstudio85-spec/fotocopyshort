@@ -1,0 +1,9 @@
+{
+  "name": "analyze video ",
+  "description": "A high-performance React application showcasing the full range of Google Gemini capabilities, including real-time multimodal interaction, image generation, video creation, and search/maps grounding.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
