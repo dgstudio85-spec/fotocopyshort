@@ -67,8 +67,17 @@ const VisualsView: React.FC = () => {
     if (!ctx) return [];
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    
+    // Calculate sample points across the duration
     const points = [];
-    for (let i = 0; i < count; i++) points.push(0.05 + (i * (0.9 / (count - 1 || 1))));
+    if (count === 1) {
+      points.push(0.5); // Just the middle
+    } else {
+      for (let i = 0; i < count; i++) {
+        points.push(0.05 + (i * (0.9 / (count - 1))));
+      }
+    }
+
     for (const p of points) {
       const ts = video.duration * p;
       video.currentTime = ts;
@@ -87,7 +96,7 @@ const VisualsView: React.FC = () => {
     setIsAnalyzing(true);
     setScenes([]); 
     setSocialMetadata(null);
-    setProgress(`Menganalisis Strategi Viral...`);
+    setProgress(`Menganalisis ${numScenes} Adegan...`);
     try {
       const frames = await captureFrames(numScenes);
       const result = await analyzeVideoToScenes(frames, numScenes);
@@ -146,17 +155,21 @@ const VisualsView: React.FC = () => {
 
   const handleGlobalFormatChange = (format: "16:9" | "9:16") => {
     setGlobalAspectRatio(format);
-    // Reset images when format changes to ensure consistency
     setScenes(prev => prev.map(s => ({ ...s, imageUrl: undefined })));
+  };
+
+  const handleNumScenesChange = (val: number) => {
+    const safeVal = Math.min(1000, Math.max(1, val));
+    setNumScenes(safeVal);
   };
 
   const SocialColumn = ({ platform, data, color, icon, isLandscape = false }: { platform: string, data?: SocialPlatformData, color: string, icon: string, isLandscape?: boolean }) => {
     if (!data) return null;
 
     const labels = {
-      youtube: { title: 'Viral Header', desc: 'SEO Meta Description' },
-      tiktok: { title: 'Hook Sentence', desc: 'Interaction Caption' },
-      instagram: { title: 'Aesthetic Heading', desc: 'Visual Context' }
+      youtube: { title: 'Judul Viral YouTube', desc: 'Deskripsi Meta SEO' },
+      tiktok: { title: 'Kalimat Hook (Pembuka)', desc: 'Caption Interaksi' },
+      instagram: { title: 'Judul Estetik', desc: 'Konteks Visual' }
     };
     const currentLabels = labels[platform as keyof typeof labels];
 
@@ -174,21 +187,21 @@ const VisualsView: React.FC = () => {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{currentLabels.title}</label>
-              <button onClick={() => handleCopyText(`${platform}-t`, data.title)} className={`text-[9px] font-black uppercase transition-all px-3 py-1 rounded-full ${copiedId === `${platform}-t` ? 'bg-green-500 text-white' : 'text-white/50 hover:text-white bg-white/5'}`}> {copiedId === `${platform}-t` ? '✓ Copied' : 'Copy'} </button>
+              <button onClick={() => handleCopyText(`${platform}-t`, data.title)} className={`text-[9px] font-black uppercase transition-all px-3 py-1 rounded-full ${copiedId === `${platform}-t` ? 'bg-green-500 text-white' : 'text-white/50 hover:text-white bg-white/5'}`}> {copiedId === `${platform}-t` ? '✓ Disalin' : 'Salin'} </button>
             </div>
-            <div className="bg-black/60 p-5 rounded-3xl border border-white/5 text-xs text-white font-black italic leading-relaxed shadow-inner"> {data.title || "Generating..."} </div>
+            <div className="bg-black/60 p-5 rounded-3xl border border-white/5 text-xs text-white font-black italic leading-relaxed shadow-inner"> {data.title || "Sedang membuat..."} </div>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{currentLabels.desc}</label>
-              <button onClick={() => handleCopyText(`${platform}-d`, data.description)} className={`text-[9px] font-black uppercase transition-all px-3 py-1 rounded-full ${copiedId === `${platform}-d` ? 'bg-green-500 text-white' : 'text-white/50 hover:text-white bg-white/5'}`}> {copiedId === `${platform}-d` ? '✓ Copied' : 'Copy'} </button>
+              <button onClick={() => handleCopyText(`${platform}-d`, data.description)} className={`text-[9px] font-black uppercase transition-all px-3 py-1 rounded-full ${copiedId === `${platform}-d` ? 'bg-green-500 text-white' : 'text-white/50 hover:text-white bg-white/5'}`}> {copiedId === `${platform}-d` ? '✓ Disalin' : 'Salin'} </button>
             </div>
-            <div className={`bg-white/5 p-5 rounded-3xl border border-white/5 text-[11px] text-white/70 font-medium leading-relaxed overflow-y-auto custom-scrollbar italic shadow-inner ${isLandscape ? 'h-32 md:h-40' : 'max-h-40'}`}> {data.description || "Generating..."} </div>
+            <div className={`bg-white/5 p-5 rounded-3xl border border-white/5 text-[11px] text-white/70 font-medium leading-relaxed overflow-y-auto custom-scrollbar italic shadow-inner ${isLandscape ? 'h-32 md:h-40' : 'max-h-40'}`}> {data.description || "Sedang membuat..."} </div>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">High Reach Tags</label>
-              <button onClick={() => handleCopyText(`${platform}-h`, data.tags)} className={`text-[9px] font-black uppercase transition-all px-3 py-1 rounded-full ${copiedId === `${platform}-h` ? 'bg-green-500 text-white' : 'text-white/50 hover:text-white bg-white/5'}`}> {copiedId === `${platform}-h` ? '✓ Copied' : 'Copy'} </button>
+              <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Hashtag Jangkauan Tinggi</label>
+              <button onClick={() => handleCopyText(`${platform}-h`, data.tags)} className={`text-[9px] font-black uppercase transition-all px-3 py-1 rounded-full ${copiedId === `${platform}-h` ? 'bg-green-500 text-white' : 'text-white/50 hover:text-white bg-white/5'}`}> {copiedId === `${platform}-h` ? '✓ Disalin' : 'Salin'} </button>
             </div>
             <div className="bg-black/60 p-5 rounded-3xl border border-white/5 text-[10px] text-white/40 font-black tracking-tight italic leading-relaxed shadow-inner"> {data.tags || "#trending #viral"} </div>
           </div>
@@ -197,7 +210,7 @@ const VisualsView: React.FC = () => {
           onClick={() => handleCopyText(platform, `${data.title}\n\n${data.description}\n\n${data.tags}`)}
           className={`py-5 rounded-[2rem] bg-white/5 hover:bg-${color} hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-white/10 shadow-xl active:scale-95 ${isLandscape ? 'md:w-48 md:h-full md:mt-0 md:rounded-3xl' : 'w-full mt-10'}`}
         >
-          {copiedId === platform ? '✓ Success' : (isLandscape ? 'Salin Paket' : 'Salin Semua Metadata')}
+          {copiedId === platform ? '✓ Berhasil' : (isLandscape ? 'Salin Paket Konten' : 'Salin Semua Metadata')}
         </button>
       </div>
     );
@@ -235,9 +248,8 @@ const VisualsView: React.FC = () => {
             </div>
             <div className="lg:w-1/2 flex flex-col justify-center space-y-8">
               <div className="bg-black/40 p-10 rounded-[3rem] border border-white/10 backdrop-blur-xl shadow-2xl space-y-8">
-                {/* Global Aspect Ratio Control */}
                 <div className="space-y-4">
-                  <h4 className="text-white/40 font-black text-[9px] uppercase tracking-[0.3em] italic">1. Pilih Format Global</h4>
+                  <h4 className="text-white/40 font-black text-[9px] uppercase tracking-[0.3em] italic">1. Pilih Format Visual</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <button 
                       onClick={() => handleGlobalFormatChange("16:9")}
@@ -254,13 +266,32 @@ const VisualsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Number of Scenes Control */}
                 <div className="space-y-4">
-                  <h4 className="text-white/40 font-black text-[9px] uppercase tracking-[0.3em] italic">2. Kepadatan Adegan</h4>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[3, 4, 6, 8].map(n => (
-                      <button key={n} onClick={() => setNumScenes(n)} className={`py-4 rounded-2xl text-[11px] font-black uppercase transition-all ${numScenes === n ? 'bg-red-600 text-white shadow-lg shadow-red-500/40' : 'bg-white/5 text-white/30 hover:text-white border border-white/5'}`}>{n}</button>
-                    ))}
+                  <h4 className="text-white/40 font-black text-[9px] uppercase tracking-[0.3em] italic">2. Jumlah Adegan (1 - 1000)</h4>
+                  <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5 space-y-4">
+                    <div className="flex items-center justify-between gap-6">
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="1000" 
+                        value={numScenes} 
+                        onChange={(e) => handleNumScenesChange(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-red-600"
+                      />
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max="1000" 
+                        value={numScenes}
+                        onChange={(e) => handleNumScenesChange(parseInt(e.target.value))}
+                        className="w-24 bg-black/60 border border-white/10 rounded-2xl py-3 px-2 text-center text-white font-black text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+                      />
+                    </div>
+                    <div className="flex justify-between text-[8px] font-black text-white/20 uppercase tracking-widest px-1">
+                      <span>Minimal: 1</span>
+                      <span>Target: {numScenes}</span>
+                      <span>Maksimal: 1000</span>
+                    </div>
                   </div>
                 </div>
 
@@ -278,7 +309,7 @@ const VisualsView: React.FC = () => {
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="px-4 py-2 bg-red-600 text-[10px] font-black text-white rounded-full uppercase tracking-[0.4em] shadow-lg shadow-red-500/40 animate-pulse">Algoritma Optimal</div>
             <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase drop-shadow-2xl">Social Media Optimizer</h2>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-[0.2em] max-w-lg">Optimasi metadata secara strategis untuk menjangkau viewers maksimal di setiap platform.</p>
+            <p className="text-white/40 text-xs font-bold uppercase tracking-[0.2em] max-w-lg">Optimasi metadata secara strategis untuk menjangkau penonton maksimal di setiap platform.</p>
           </div>
           <div className="flex flex-col gap-8">
             <div className="w-full h-auto">
@@ -297,12 +328,12 @@ const VisualsView: React.FC = () => {
         <section className="space-y-12 animate-in fade-in duration-1000">
           <div className="flex items-center justify-between border-b border-white/10 pb-6">
             <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Gallery Frame</h2>
+              <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Galeri Adegan</h2>
               <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Format Aktif: {globalAspectRatio === '16:9' ? 'LANDSCAPE 16:9' : 'PORTRAIT 9:16'}</p>
             </div>
             <div className="flex items-center gap-3">
                <span className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></span>
-               <span className="text-[11px] font-black text-white/50 uppercase tracking-[0.3em]">{scenes.length} Scenes Ready</span>
+               <span className="text-[11px] font-black text-white/50 uppercase tracking-[0.3em]">{scenes.length} Adegan Siap</span>
             </div>
           </div>
 
@@ -327,7 +358,7 @@ const VisualsView: React.FC = () => {
                       }} 
                       className="w-full bg-transparent border-none p-0 text-[11px] text-white/60 focus:ring-0 italic h-24 resize-none leading-relaxed custom-scrollbar"
                     />
-                    <button onClick={() => handleCopyText(scene.id, scene.prompt)} className={`absolute bottom-0 right-0 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${copiedId === scene.id ? 'bg-green-500 text-white' : 'bg-white/10 text-white/50 hover:text-white'}`}> {copiedId === scene.id ? '✓ Copied' : 'Copy Prompt'} </button>
+                    <button onClick={() => handleCopyText(scene.id, scene.prompt)} className={`absolute bottom-0 right-0 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${copiedId === scene.id ? 'bg-green-500 text-white' : 'bg-white/10 text-white/50 hover:text-white'}`}> {copiedId === scene.id ? '✓ Disalin' : 'Salin Prompt'} </button>
                   </div>
                 </div>
 
@@ -343,14 +374,14 @@ const VisualsView: React.FC = () => {
                   ) : (
                     <div className="text-center p-8">
                       <button onClick={() => visualizeScene(scene.id)} disabled={scene.isGenerating} className="bg-white text-black px-12 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl hover:bg-red-600 hover:text-white active:scale-95 disabled:opacity-20">
-                        {scene.isGenerating ? 'Rendering...' : 'Generate Format ' + (globalAspectRatio === '16:9' ? 'Wide' : 'Tall')}
+                        {scene.isGenerating ? 'Rendering...' : 'Buat Format ' + (globalAspectRatio === '16:9' ? 'Wide' : 'Tall')}
                       </button>
                     </div>
                   )}
                   {scene.isGenerating && (
                     <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center backdrop-blur-2xl z-20">
                       <div className="w-12 h-12 border-2 border-red-500 border-t-transparent animate-spin rounded-full mb-6"></div>
-                      <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] animate-pulse">Rendering Pixel...</span>
+                      <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] animate-pulse">Merender Pixel...</span>
                     </div>
                   )}
                 </div>

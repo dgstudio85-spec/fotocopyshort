@@ -11,10 +11,14 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
   2. Buat tepat ${numScenes} adegan (scenes) berdasarkan alur video.
   3. Buat metadata sosial media yang dioptimalkan untuk jangkauan luas (high reach) pada 3 platform utama.
   
+  Ketentuan Bahasa (SANGAT PENTING):
+  - Judul, deskripsi, caption, dan tag: WAJIB dalam BAHASA INDONESIA yang menarik dan viral.
+  - "prompt" untuk adegan: WAJIB dalam BAHASA INGGRIS yang sangat detail, teknis, dan deskriptif untuk menghasilkan gambar berkualitas tinggi (sebutkan lighting, cinematic style, dan detail objek).
+  
   Ketentuan Metadata:
-  - YouTube Shorts: Judul yang memancing rasa penasaran, deskripsi SEO yang kuat, dan tag pencarian.
-  - TikTok: Hook yang kuat di awal, caption singkat & padat, dan hashtag trending saat ini.
-  - Instagram Reels: Caption estetik yang mengundang interaksi, deskripsi singkat, dan hashtag populer.
+  - YouTube: Judul yang memancing klik (clickbait positif), deskripsi SEO yang kuat, dan tag pencarian populer.
+  - TikTok: Kalimat hook pembuka yang kuat, caption singkat & padat, dan hashtag trending.
+  - Instagram: Caption estetik yang mengundang interaksi, deskripsi singkat, dan hashtag populer.
   
   Kembalikan dalam format JSON murni:
   {
