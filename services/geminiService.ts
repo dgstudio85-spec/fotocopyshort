@@ -3,45 +3,42 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 /**
  * Menganalisis frame video untuk mengekstrak adegan dan metadata media sosial yang viral.
- * Dioptimalkan untuk Algoritma YouTube, TikTok, dan Instagram.
- * Menjamin jumlah adegan yang dihasilkan (scenes.length) sama dengan numScenes.
+ * Dioptimalkan untuk konsistensi karakter (Identical Character Consistency).
  */
 export const analyzeVideoToScenes = async (frames: { data: string, mimeType: string }[], numScenes: number = 4) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Prompt yang jauh lebih ketat dan berorientasi pada hasil (Result-Oriented)
-  const prompt = `Anda adalah Pakar Pertumbuhan Media Sosial & Spesialis SEO YouTube No. 1 di Indonesia.
+  const prompt = `Anda adalah Pakar Forensik Visual & Spesialis Karakter AI.
   
   TUGAS UTAMA:
-  Analisislah ${frames.length} frame video yang saya kirimkan. 
-  PENTING: Anda HARUS menghasilkan tepat ${numScenes} objek di dalam array "scenes". 
-  Setiap frame yang saya kirimkan mewakili satu adegan unik. Jangan menggabungkan adegan. Jangan mengurangi jumlah adegan.
-  Jika saya mengirimkan ${frames.length} frame, output JSON "scenes" Anda HARUS memiliki tepat ${frames.length} elemen.
+  1. Identifikasi tokoh utama dalam frame ini.
+  2. Buat "DNA KARAKTER" yang sangat detail (Character Anchor) agar AI pembuat gambar bisa mereplikasi tokoh ini 100% sama.
+  
+  DETAIL DNA KARAKTER (WAJIB ADA):
+  - Wajah: Struktur tulang pipi, bentuk mata, detail alis, warna kulit (skintone), dan tanda lahir/karakteristik unik.
+  - Rambut: Tekstur, panjang, warna, dan gaya sisiran secara teknis.
+  - Pakaian: Identifikasi warna spesifik (HEX atau nama warna teknis), jenis bahan (linen, jeans, wool), dan pola pakaian.
+  - Raut Wajah: Cara tokoh tersenyum atau menatap (ekspresi khas).
 
-  STRATEGI METADATA VIRAL (Bahasa Indonesia):
-  1. YouTube (Target: 1 Juta+ Viewers):
-     - Title: Buat judul yang memicu "Extreme Curiosity" atau "Urgency". Gunakan kata-kata power (Contoh: "Terungkap!", "Rahasia...", "Jangan Sampai...", "Cara Gila..."). Gunakan Huruf Besar di kata kunci utama.
-     - Description: 2 baris pertama harus sangat informatif dan mengandung kata kunci pencarian utama. Sertakan "Why you should watch" dan ajakan interaksi (CTA).
-     - Tags: WAJIB format HASHTAG (#tag1 #tag2 ...). Minimal 15 hashtag SEO-friendly yang mencakup topik luas dan spesifik.
+  INSTRUKSI ADEGAN:
+  - Buat tepat ${numScenes} adegan.
+  - "prompt" untuk setiap adegan HARUS diawali dengan deskripsi DNA Karakter tadi, lalu diikuti aksi/latar spesifik di frame tersebut.
+  - Gunakan istilah fotografi profesional (e.g., "shot on 35mm lens", "f/1.8", "cinematic color grading").
 
-  2. TikTok & Reels:
-     - Hook: Kalimat pembuka yang membuat orang berhenti scroll dalam 0.5 detik.
-     - Tags: Gunakan hashtag yang sedang tren di Indonesia sesuai kategori konten ini.
+  STRATEGI METADATA (Bahasa Indonesia):
+  - Buat Judul & Deskripsi YouTube yang dioptimalkan untuk CTR tinggi (Gunakan Teknik Hook/Curiosity Gap).
+  - Hashtag WAJIB diawali tanda '#' dan dipisahkan spasi.
 
-  STRATEGI VISUAL PROMPT (Bahasa Inggris):
-  - "prompt": Deskripsi ultra-detail (hyper-realistic, photorealistic, 8k, cinematic lighting, wide angle/close up) berdasarkan visual frame asli agar AI Image Generator bisa meniru gaya video aslinya dengan sempurna.
-
-  Kembalikan dalam format JSON murni:
+  Kembalikan dalam format JSON:
   {
-    "characterDescription": "Deskripsi mendalam tentang subjek/karakter utama agar konsisten",
+    "characterDNA": "Deskripsi fisik teknis lengkap karakter utama dalam Bahasa Inggris",
     "scenes": [
-      { "title": "Judul Adegan Singkat", "prompt": "Detailed English Visual Prompt" } 
-      // Panjang array "scenes" ini HARUS TEPAT ${numScenes}
+      { "title": "...", "prompt": "Character DNA + Scene Action + Lighting + Camera Specs (English)" }
     ],
     "socialMetadata": {
-      "youtube": { "title": "Judul Viral", "description": "Deskripsi SEO", "tags": "#hashtag #youtube #viral" },
-      "tiktok": { "title": "Hook Video", "description": "Caption FYP", "tags": "#fyp #trending" },
-      "instagram": { "title": "Headline", "description": "Storytelling", "tags": "#explore #reels" }
+      "youtube": { "title": "...", "description": "...", "tags": "..." },
+      "tiktok": { "title": "...", "description": "...", "tags": "..." },
+      "instagram": { "title": "...", "description": "...", "tags": "..." }
     }
   }`;
 
@@ -53,7 +50,7 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          characterDescription: { type: Type.STRING },
+          characterDNA: { type: Type.STRING },
           scenes: {
             type: Type.ARRAY,
             minItems: numScenes,
@@ -100,18 +97,16 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
             }
           }
         },
-        required: ["characterDescription", "scenes", "socialMetadata"]
+        required: ["characterDNA", "scenes", "socialMetadata"]
       }
     }
   });
 
   try {
-    const parsed = JSON.parse(response.text || "{}");
-    // Backup: Jika AI masih bandel memberikan jumlah yang salah, kita potong atau beri warning (meskipun schema harusnya memaksanya)
-    return parsed;
+    return JSON.parse(response.text || "{}");
   } catch (e) {
     console.error("JSON parse error", e);
-    return { characterDescription: "", scenes: [], socialMetadata: null };
+    return { characterDNA: "", scenes: [], socialMetadata: null };
   }
 };
 

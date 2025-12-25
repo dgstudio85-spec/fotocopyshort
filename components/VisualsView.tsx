@@ -28,8 +28,9 @@ const VisualsView: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scenes, setScenes] = useState<SceneResult[]>([]);
   const [socialMetadata, setSocialMetadata] = useState<SocialMetadata | null>(null);
+  const [characterDNA, setCharacterDNA] = useState<string>('');
   const [progress, setProgress] = useState('');
-  const [numScenes, setNumScenes] = useState(4);
+  const [numScenes, setNumScenes] = useState(5);
   const [globalAspectRatio, setGlobalAspectRatio] = useState<"16:9" | "9:16">("16:9");
   const [duration, setDuration] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -50,6 +51,7 @@ const VisualsView: React.FC = () => {
       setVideoUrl(url);
       setScenes([]);
       setSocialMetadata(null);
+      setCharacterDNA('');
       setDuration(null);
     }
   };
@@ -95,13 +97,13 @@ const VisualsView: React.FC = () => {
     setIsAnalyzing(true);
     setScenes([]); 
     setSocialMetadata(null);
-    setProgress(`Strategi Algoritma Sedang Disusun...`);
+    setProgress(`Mengekstrak DNA Karakter & ${numScenes} Adegan...`);
     try {
       const frames = await captureFrames(numScenes);
       const result = await analyzeVideoToScenes(frames, numScenes);
-      if (result.socialMetadata) {
-        setSocialMetadata(result.socialMetadata);
-      }
+      if (result.socialMetadata) setSocialMetadata(result.socialMetadata);
+      if (result.characterDNA) setCharacterDNA(result.characterDNA);
+      
       setScenes(result.scenes.map((s: any, idx: number) => ({
         ...s,
         id: Math.random().toString(36).substr(2, 9),
@@ -155,11 +157,6 @@ const VisualsView: React.FC = () => {
   const handleGlobalFormatChange = (format: "16:9" | "9:16") => {
     setGlobalAspectRatio(format);
     setScenes(prev => prev.map(s => ({ ...s, imageUrl: undefined })));
-  };
-
-  const handleNumScenesChange = (val: number) => {
-    const safeVal = Math.min(1000, Math.max(1, val));
-    setNumScenes(safeVal);
   };
 
   const SocialColumn = ({ platform, data, color, icon, isLandscape = false }: { platform: string, data?: SocialPlatformData, color: string, icon: string, isLandscape?: boolean }) => {
@@ -217,7 +214,7 @@ const VisualsView: React.FC = () => {
 
   return (
     <div className="space-y-16 pb-32">
-      {/* Upload & Global Controls Section */}
+      {/* Header & Controls Section */}
       <section className="bg-white/5 backdrop-blur-2xl p-1 rounded-[3.5rem] border border-white/10 shadow-2xl overflow-hidden">
         {!videoUrl ? (
           <div onClick={() => fileInputRef.current?.click()} className="group cursor-pointer m-4 border-2 border-dashed border-white/10 rounded-[3rem] py-24 flex flex-col items-center justify-center hover:border-red-500/50 transition-all bg-black/20">
@@ -266,30 +263,25 @@ const VisualsView: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-white/40 font-black text-[9px] uppercase tracking-[0.3em] italic">2. Sampel Adegan (1 - 1000)</h4>
-                  <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5 space-y-4">
-                    <div className="flex items-center justify-between gap-6">
-                      <input 
-                        type="range" 
-                        min="1" 
-                        max="1000" 
-                        value={numScenes} 
-                        onChange={(e) => handleNumScenesChange(parseInt(e.target.value))}
-                        className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-red-600"
+                  <h4 className="text-white/40 font-black text-[9px] uppercase tracking-[0.3em] italic">2. Jumlah Adegan (1 - 1000)</h4>
+                  <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5 flex items-center gap-6">
+                    <input 
+                      type="range" min="1" max="100" value={numScenes > 100 ? 100 : numScenes} 
+                      onChange={(e) => setNumScenes(parseInt(e.target.value))}
+                      className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-red-600"
+                    />
+                    <div className="flex flex-col items-center gap-1">
+                       <input 
+                        type="number" min="1" max="1000" value={numScenes}
+                        onChange={(e) => setNumScenes(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
+                        className="w-16 bg-black/60 border border-white/10 rounded-xl py-2 text-center text-white font-black text-sm outline-none focus:border-red-500 transition-all"
                       />
-                      <input 
-                        type="number" 
-                        min="1" 
-                        max="1000" 
-                        value={numScenes}
-                        onChange={(e) => handleNumScenesChange(parseInt(e.target.value))}
-                        className="w-24 bg-black/60 border border-white/10 rounded-2xl py-3 px-2 text-center text-white font-black text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
-                      />
+                      <span className="text-[8px] font-black text-white/20 uppercase tracking-tighter">SCENES</span>
                     </div>
                   </div>
                 </div>
 
-                <button onClick={startAnalysis} disabled={isAnalyzing} className="w-full py-6 rounded-[2.5rem] bg-red-600 text-white font-black uppercase tracking-[0.3em] text-[11px] hover:bg-white hover:text-black transition-all shadow-2xl disabled:opacity-20 active:scale-95">OPTIMASI ALGORITMA</button>
+                <button onClick={startAnalysis} disabled={isAnalyzing} className="w-full py-6 rounded-[2.5rem] bg-red-600 text-white font-black uppercase tracking-[0.3em] text-[11px] hover:bg-white hover:text-black transition-all shadow-2xl disabled:opacity-20 active:scale-95">PROFILING ALGORITMA</button>
               </div>
             </div>
           </div>
@@ -297,18 +289,31 @@ const VisualsView: React.FC = () => {
         <input type="file" ref={fileInputRef} className="hidden" accept="video/*" onChange={handleFileChange} />
       </section>
 
+      {/* Character DNA Anchor Section */}
+      {characterDNA && (
+        <section className="animate-in slide-in-from-left-10 duration-700">
+           <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]"></div>
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-2xl">🧬</span>
+              <div>
+                <h3 className="text-lg font-black text-white uppercase italic tracking-tighter">Character DNA Profile</h3>
+                <p className="text-[9px] text-white/30 uppercase font-black tracking-widest">DIREPLESIKAN PADA SETIAP ADEGAN</p>
+              </div>
+            </div>
+            <p className="text-sm text-white/70 font-medium leading-relaxed italic bg-black/40 p-6 rounded-3xl border border-white/5">{characterDNA}</p>
+          </div>
+        </section>
+      )}
+
       {/* Social Optimizer Section */}
       {socialMetadata && (
-        <section className="space-y-10 animate-in slide-in-from-bottom-20 duration-1000">
+        <section className="space-y-10">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="px-4 py-2 bg-red-600 text-[10px] font-black text-white rounded-full uppercase tracking-[0.4em] shadow-lg shadow-red-500/40 animate-pulse">ALGORITMA OPTIMAL</div>
             <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase drop-shadow-2xl">Social Media Optimizer</h2>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-[0.2em] max-w-lg">Optimasi judul dan deskripsi berdasarkan data visual untuk jangkauan viewers maksimal.</p>
           </div>
           <div className="flex flex-col gap-8">
-            <div className="w-full h-auto">
-              <SocialColumn platform="youtube" data={socialMetadata.youtube} color="red-600" icon="📺" isLandscape={true} />
-            </div>
+            <SocialColumn platform="youtube" data={socialMetadata.youtube} color="red-600" icon="📺" isLandscape={true} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <SocialColumn platform="tiktok" data={socialMetadata.tiktok} color="cyan-400" icon="🎵" />
               <SocialColumn platform="instagram" data={socialMetadata.instagram} color="pink-500" icon="📸" />
@@ -319,59 +324,62 @@ const VisualsView: React.FC = () => {
 
       {/* Gallery Section */}
       {scenes.length > 0 && (
-        <section className="space-y-12 animate-in fade-in duration-1000">
-          <div className="flex items-center justify-between border-b border-white/10 pb-6">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Visual Assets</h2>
-              <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">FORMAT AKTIF: {globalAspectRatio === '16:9' ? 'LANDSCAPE 16:9' : 'PORTRAIT 9:16'}</p>
-            </div>
+        <section className="space-y-12">
+          <div className="border-b border-white/10 pb-6">
+            <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Visual Assets ({scenes.length} Scenes)</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {scenes.map((scene, idx) => (
-              <div key={scene.id} className="group flex flex-col bg-white/5 border border-white/10 rounded-[3rem] overflow-hidden hover:border-white/30 transition-all shadow-2xl relative backdrop-blur-3xl">
+              <div key={scene.id} className="group flex flex-col bg-white/5 border border-white/10 rounded-[3rem] overflow-hidden hover:border-white/30 transition-all backdrop-blur-3xl relative">
                 <div className="p-10 space-y-6">
                   <div className="flex justify-between items-center bg-black/40 p-4 rounded-3xl border border-white/5">
-                    <div className="flex items-center gap-5">
-                      <span className="w-10 h-10 flex items-center justify-center bg-red-600 text-white font-black text-xs rounded-2xl shadow-xl">{idx + 1}</span>
-                      <p className="font-black text-white text-sm truncate w-48 uppercase tracking-tighter italic">{scene.title}</p>
-                    </div>
-                    <span className="text-[11px] font-black text-red-500 bg-red-500/10 px-3 py-1 rounded-full tracking-tighter">{formatTime(scene.timestamp)}</span>
+                    <span className="w-10 h-10 flex items-center justify-center bg-red-600 text-white font-black text-xs rounded-2xl">{idx + 1}</span>
+                    <p className="font-black text-white text-sm uppercase italic">{scene.title}</p>
+                    <span className="text-[11px] font-black text-red-500">{formatTime(scene.timestamp)}</span>
                   </div>
-                  <div className="relative">
+                  
+                  {/* Kolom Salin Prompt yang Sebelumnya Hilang */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">PROMPT DNA & ACTION</label>
+                      <button 
+                        onClick={() => handleCopyText(scene.id + '-p', scene.prompt)} 
+                        className={`text-[9px] font-black uppercase transition-all px-3 py-1 rounded-full ${copiedId === scene.id + '-p' ? 'bg-green-500 text-white' : 'text-white/50 hover:text-white bg-white/5'}`}
+                      >
+                        {copiedId === scene.id + '-p' ? '✓ DISALIN' : 'SALIN PROMPT'}
+                      </button>
+                    </div>
                     <textarea 
                       value={scene.prompt} 
                       onChange={(e) => {
-                        const newScenes = [...scenes];
-                        newScenes[idx].prompt = e.target.value;
-                        setScenes(newScenes);
+                        const ns = [...scenes];
+                        ns[idx].prompt = e.target.value;
+                        setScenes(ns);
                       }} 
-                      className="w-full bg-transparent border-none p-0 text-[11px] text-white/60 focus:ring-0 italic h-24 resize-none leading-relaxed custom-scrollbar"
+                      className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-[11px] text-white/50 italic h-24 resize-none leading-relaxed outline-none focus:border-red-500/30 transition-all"
                     />
-                    <button onClick={() => handleCopyText(scene.id, scene.prompt)} className={`absolute bottom-0 right-0 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${copiedId === scene.id ? 'bg-green-500 text-white' : 'bg-white/10 text-white/50 hover:text-white'}`}> {copiedId === scene.id ? '✓ SALIN' : 'SALIN PROMPT'} </button>
                   </div>
                 </div>
 
-                <div className={`relative flex items-center justify-center overflow-hidden m-6 mt-0 rounded-[2.5rem] border border-white/10 shadow-inner group/img bg-black/60 transition-all duration-700 ${globalAspectRatio === '16:9' ? 'aspect-video' : 'aspect-[9/16] max-h-[600px] w-fit mx-auto'}`}>
+                <div className={`relative flex items-center justify-center overflow-hidden m-6 mt-0 rounded-[2.5rem] border border-white/10 bg-black/60 transition-all duration-700 ${globalAspectRatio === '16:9' ? 'aspect-video' : 'aspect-[9/16] max-h-[500px] w-fit mx-auto'}`}>
                   {scene.imageUrl ? (
                     <>
-                      <img src={scene.imageUrl} className="w-full h-full object-cover transition-all duration-1000 group-hover/img:scale-110 group-hover/img:brightness-50" alt={scene.title} />
-                      <div className="absolute inset-0 opacity-0 group-hover/img:opacity-100 transition-all flex items-center justify-center gap-6 backdrop-blur-md">
-                        <button onClick={() => downloadImage(scene.imageUrl!, `fotocopy-${idx+1}`)} className="w-16 h-16 bg-white text-black rounded-3xl flex items-center justify-center shadow-2xl hover:scale-110 transition-all active:scale-90 shadow-white/10"><span className="text-3xl">📥</span></button>
-                        <button onClick={() => visualizeScene(scene.id)} className="w-16 h-16 bg-red-600 text-white rounded-3xl flex items-center justify-center shadow-2xl hover:scale-110 transition-all active:scale-90 shadow-red-500/20"><span className="text-3xl">🔄</span></button>
+                      <img src={scene.imageUrl} className="w-full h-full object-cover transition-all group-hover:scale-110" alt={scene.title} />
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-6 backdrop-blur-md">
+                        <button onClick={() => downloadImage(scene.imageUrl!, `fotocopy-${idx+1}`)} className="w-14 h-14 bg-white text-black rounded-2xl flex items-center justify-center shadow-xl hover:scale-110 transition-all">📥</button>
+                        <button onClick={() => visualizeScene(scene.id)} className="w-14 h-14 bg-red-600 text-white rounded-2xl flex items-center justify-center shadow-xl hover:scale-110 transition-all">🔄</button>
                       </div>
                     </>
                   ) : (
-                    <div className="text-center p-8">
-                      <button onClick={() => visualizeScene(scene.id)} disabled={scene.isGenerating} className="bg-white text-black px-12 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl hover:bg-red-600 hover:text-white active:scale-95 disabled:opacity-20">
-                        {scene.isGenerating ? 'Rendering...' : 'Render Format ' + (globalAspectRatio === '16:9' ? 'Wide' : 'Tall')}
-                      </button>
-                    </div>
+                    <button onClick={() => visualizeScene(scene.id)} disabled={scene.isGenerating} className="bg-white text-black px-12 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
+                      {scene.isGenerating ? 'Rendering DNA...' : 'Render Adegan'}
+                    </button>
                   )}
                   {scene.isGenerating && (
-                    <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center backdrop-blur-2xl z-20">
-                      <div className="w-12 h-12 border-2 border-red-500 border-t-transparent animate-spin rounded-full mb-6"></div>
-                      <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.4em] animate-pulse">MERENDER PIXEL...</span>
+                    <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center backdrop-blur-2xl">
+                      <div className="w-12 h-12 border-2 border-red-500 border-t-transparent animate-spin rounded-full mb-4"></div>
+                      <span className="text-[10px] font-black text-red-500 tracking-[0.4em]">SYNCING DNA...</span>
                     </div>
                   )}
                 </div>
