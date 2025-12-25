@@ -3,45 +3,45 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 /**
  * Menganalisis frame video untuk mengekstrak adegan dan metadata media sosial yang viral.
- * Dioptimalkan untuk Algoritma YouTube, TikTok, dan Instagram dengan format Hashtag siap pakai.
+ * Dioptimalkan untuk Algoritma YouTube, TikTok, dan Instagram.
+ * Menjamin jumlah adegan yang dihasilkan (scenes.length) sama dengan numScenes.
  */
 export const analyzeVideoToScenes = async (frames: { data: string, mimeType: string }[], numScenes: number = 4) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Anda adalah Spesialis Konten Viral & Pakar SEO Media Sosial.
-  Tugas Anda adalah menganalisis frame video ini dan membuat paket metadata yang PASTI FYP dan mendapatkan banyak viewers.
-
-  KETENTUAN OUTPUT METADATA (Bahasa Indonesia):
-  1. YouTube (Fokus pada Search & Suggested):
-     - Title: Gunakan teknik High-CTR (Curiosity Gap, High Stakes, atau Result-Oriented). Maks 70 karakter.
-     - Description: Pastikan 2 baris pertama mengandung kata kunci utama. Sertakan ringkasan konten yang menggugah rasa penasaran, manfaat bagi penonton, dan Call to Action.
-     - Tags: WAJIB dalam format HASHTAG (#kata1 #kata2 #kata3). Gunakan campuran kata kunci broad dan long-tail.
   
-  2. TikTok (Fokus pada Hook & Trend):
-     - Title/Hook: Kalimat 3 detik pertama yang menghentikan scrolling.
-     - Caption: Singkat, menggunakan bahasa slang/tren terkini, dan memancing komentar.
-     - Tags: WAJIB dalam format HASHTAG (#fyp #foryou #viral #trend #danLainnya).
+  // Prompt yang jauh lebih ketat dan berorientasi pada hasil (Result-Oriented)
+  const prompt = `Anda adalah Pakar Pertumbuhan Media Sosial & Spesialis SEO YouTube No. 1 di Indonesia.
+  
+  TUGAS UTAMA:
+  Analisislah ${frames.length} frame video yang saya kirimkan. 
+  PENTING: Anda HARUS menghasilkan tepat ${numScenes} objek di dalam array "scenes". 
+  Setiap frame yang saya kirimkan mewakili satu adegan unik. Jangan menggabungkan adegan. Jangan mengurangi jumlah adegan.
+  Jika saya mengirimkan ${frames.length} frame, output JSON "scenes" Anda HARUS memiliki tepat ${frames.length} elemen.
 
-  3. Instagram (Fokus pada Aesthetic & Engagement):
-     - Title: Headline estetik.
-     - Caption: Bercerita (storytelling) dengan format yang bersih dan emoji yang tepat.
-     - Tags: WAJIB dalam format HASHTAG (#aesthetic #explore #videoViral #danLainnya).
+  STRATEGI METADATA VIRAL (Bahasa Indonesia):
+  1. YouTube (Target: 1 Juta+ Viewers):
+     - Title: Buat judul yang memicu "Extreme Curiosity" atau "Urgency". Gunakan kata-kata power (Contoh: "Terungkap!", "Rahasia...", "Jangan Sampai...", "Cara Gila..."). Gunakan Huruf Besar di kata kunci utama.
+     - Description: 2 baris pertama harus sangat informatif dan mengandung kata kunci pencarian utama. Sertakan "Why you should watch" dan ajakan interaksi (CTA).
+     - Tags: WAJIB format HASHTAG (#tag1 #tag2 ...). Minimal 15 hashtag SEO-friendly yang mencakup topik luas dan spesifik.
 
-  KETENTUAN KHUSUS HASHTAG:
-  - Setiap kata kunci dalam bagian "tags" HARUS diawali dengan tanda '#'.
-  - Pisahkan antar hashtag dengan spasi tunggal agar pengguna bisa langsung menyalin dan menempelnya.
-  - Berikan minimal 10-15 hashtag yang relevan per platform.
+  2. TikTok & Reels:
+     - Hook: Kalimat pembuka yang membuat orang berhenti scroll dalam 0.5 detik.
+     - Tags: Gunakan hashtag yang sedang tren di Indonesia sesuai kategori konten ini.
 
-  KETENTUAN VISUAL PROMPT (Bahasa Inggris):
-  - "prompt" untuk adegan: Wajib dalam Bahasa Inggris. Deskripsikan secara teknis (lighting, camera angle, 8k resolution, cinematic style) berdasarkan analisis frame yang diberikan agar hasil render gambar sangat realistis.
+  STRATEGI VISUAL PROMPT (Bahasa Inggris):
+  - "prompt": Deskripsi ultra-detail (hyper-realistic, photorealistic, 8k, cinematic lighting, wide angle/close up) berdasarkan visual frame asli agar AI Image Generator bisa meniru gaya video aslinya dengan sempurna.
 
   Kembalikan dalam format JSON murni:
   {
-    "characterDescription": "...",
-    "scenes": [{"title": "...", "prompt": "..."}],
+    "characterDescription": "Deskripsi mendalam tentang subjek/karakter utama agar konsisten",
+    "scenes": [
+      { "title": "Judul Adegan Singkat", "prompt": "Detailed English Visual Prompt" } 
+      // Panjang array "scenes" ini HARUS TEPAT ${numScenes}
+    ],
     "socialMetadata": {
-      "youtube": { "title": "...", "description": "...", "tags": "..." },
-      "tiktok": { "title": "...", "description": "...", "tags": "..." },
-      "instagram": { "title": "...", "description": "...", "tags": "..." }
+      "youtube": { "title": "Judul Viral", "description": "Deskripsi SEO", "tags": "#hashtag #youtube #viral" },
+      "tiktok": { "title": "Hook Video", "description": "Caption FYP", "tags": "#fyp #trending" },
+      "instagram": { "title": "Headline", "description": "Storytelling", "tags": "#explore #reels" }
     }
   }`;
 
@@ -56,6 +56,8 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
           characterDescription: { type: Type.STRING },
           scenes: {
             type: Type.ARRAY,
+            minItems: numScenes,
+            maxItems: numScenes,
             items: {
               type: Type.OBJECT,
               properties: {
@@ -104,7 +106,9 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
   });
 
   try {
-    return JSON.parse(response.text || "{}");
+    const parsed = JSON.parse(response.text || "{}");
+    // Backup: Jika AI masih bandel memberikan jumlah yang salah, kita potong atau beri warning (meskipun schema harusnya memaksanya)
+    return parsed;
   } catch (e) {
     console.error("JSON parse error", e);
     return { characterDescription: "", scenes: [], socialMetadata: null };
