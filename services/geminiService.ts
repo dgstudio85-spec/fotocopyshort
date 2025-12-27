@@ -10,10 +10,10 @@ const SCENE_SCHEMA = {
       items: {
         type: Type.OBJECT,
         properties: {
-          title: { type: Type.STRING },
-          prompt: { type: Type.STRING },
-          sfx: { type: Type.STRING },
-          socialCaption: { type: Type.STRING, description: "Short viral caption for this specific scene" }
+          title: { type: Type.STRING, description: "Judul adegan dalam Bahasa Indonesia" },
+          prompt: { type: Type.STRING, description: "Prompt visual detail (Bisa Inggris/Indonesia)" },
+          sfx: { type: Type.STRING, description: "Deskripsi efek suara" },
+          socialCaption: { type: Type.STRING, description: "Caption viral singkat dalam Bahasa Indonesia" }
         },
         required: ["title", "prompt", "sfx", "socialCaption"]
       }
@@ -33,7 +33,7 @@ const SCENE_SCHEMA = {
 
 export const analyzeTextToScenes = async (story: string, numScenes: number = 4, visualStyle: string = "Cinematic Style") => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Sutradara: "${story}". Buat ${numScenes} adegan dengan gaya visual: ${visualStyle}. Fokus Hook Tinggi & Konsistensi Karakter. Gunakan Bahasa Indonesia. Output JSON.`;
+  const prompt = `Sutradara: "${story}". Buat ${numScenes} adegan dengan gaya visual: ${visualStyle}. Fokus Hook Tinggi & Konsistensi Karakter. WAJIB MENGGUNAKAN BAHASA INDONESIA untuk semua Judul, Deskripsi, dan Tag sosial media. Output JSON.`;
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: { parts: [{ text: prompt }] },
@@ -44,7 +44,7 @@ export const analyzeTextToScenes = async (story: string, numScenes: number = 4, 
 
 export const analyzeVideoToScenes = async (frames: { data: string, mimeType: string }[], numScenes: number = 4, visualStyle: string = "Cinematic Style") => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Analisis Karakter Video & Buat ${numScenes} adegan baru dengan gaya: ${visualStyle}. Konsistensi DNA Karakter wajib. Output JSON.`;
+  const prompt = `Analisis Karakter Video & Buat ${numScenes} adegan baru dengan gaya: ${visualStyle}. Konsistensi DNA Karakter wajib. WAJIB MENGGUNAKAN BAHASA INDONESIA untuk semua Judul, Deskripsi, dan Tag sosial media. Output JSON.`;
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: { parts: [...frames.map(f => ({ inlineData: f })), { text: prompt }] },
@@ -55,7 +55,7 @@ export const analyzeVideoToScenes = async (frames: { data: string, mimeType: str
 
 export const restylePrompts = async (scenes: any[], newStyle: string, characterDNA: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Ubah gaya visual (Visual Style) dari list adegan berikut menjadi: ${newStyle}. Pertahankan narasi asli tapi buat prompt visual jauh lebih mendalam, fotorealistik, dan konsisten dengan DNA Karakter: ${characterDNA}. Kembalikan list JSON dengan format yang sama (title, prompt, sfx, socialCaption).`;
+  const prompt = `Ubah gaya visual (Visual Style) dari list adegan berikut menjadi: ${newStyle}. Pertahankan narasi asli tapi buat prompt visual jauh lebih mendalam, fotorealistik, dan konsisten dengan DNA Karakter: ${characterDNA}. Pastikan semua teks pendukung tetap dalam BAHASA INDONESIA. Kembalikan list JSON dengan format yang sama.`;
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -69,20 +69,6 @@ export const restylePrompts = async (scenes: any[], newStyle: string, characterD
     }
   });
   return JSON.parse(response.text || "[]");
-};
-
-export const regenerateSingleScene = async (globalContext: string, dna: string, style: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Regenerasi SATU adegan untuk cerita: "${globalContext}". DNA Karakter: "${dna}". Style: "${style}". Berikan judul, visual prompt, sfx, dan social caption. Output JSON sesuai skema objek tunggal adegan.`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: { parts: [{ text: prompt }] },
-    config: { 
-      responseMimeType: "application/json",
-      responseSchema: (SCENE_SCHEMA.properties.scenes as any).items
-    }
-  });
-  return JSON.parse(response.text || "{}");
 };
 
 export const generateImage = async (prompt: string, aspectRatio: "16:9" | "9:16" | "1:1" = "16:9") => {
